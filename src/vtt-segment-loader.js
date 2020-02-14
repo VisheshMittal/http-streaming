@@ -176,9 +176,11 @@ export default class VTTSegmentLoader extends SegmentLoader {
       );
     }
 
+    const buffered = this.buffered_();
+
     // see if we need to begin loading immediately
     let segmentInfo = this.checkBuffer_(
-      this.buffered_(),
+      buffered,
       this.playlist_,
       this.mediaIndex,
       this.hasPlayed_(),
@@ -192,7 +194,7 @@ export default class VTTSegmentLoader extends SegmentLoader {
       return;
     }
 
-    if (this.syncController_.timestampOffsetForTimeline(segmentInfo.timeline) === null) {
+    if (this.syncController_.timestampOffsetForSegment(segmentInfo) === null) {
       // We don't have the timestamp offset that we need to sync subtitles.
       // Rerun on a timestamp offset or user interaction.
       const checkTimestampOffset = () => {
@@ -204,8 +206,17 @@ export default class VTTSegmentLoader extends SegmentLoader {
       };
 
       this.syncController_.one('timestampoffset', checkTimestampOffset);
+      this.syncController_.one('lastbufferedsegmentupdate', checkTimestampOffset);
       this.state = 'WAITING_ON_TIMELINE';
       return;
+
+      // // segmentInfo.startOfSegment used to be used as the timestamp offset, however, that
+      // // value uses the end of the last segment if it is available. While this value
+      // // should often be correct, it's better to rely on the buffered end, as the new
+      // // content post discontinuity should line up with the buffered end as if it were
+      // // time 0 for the new content.
+      // segmentInfo.timestampOffset =
+      //   buffered.length ? buffered.end(buffered.length - 1) : segmentInfo.startOfSegment;
     }
 
     this.loadSegment_(segmentInfo);

@@ -138,7 +138,10 @@ export const refreshDelay = (media, update) => {
     // cannot be determined, try again after half the target duration
     delay = (media.targetDuration || 10) * 500;
   }
+
   return delay;
+  // // TODO: added extra time to emulate LIVE workflow.
+  // return Math.max(delay, 15000);
 };
 
 /**
@@ -270,6 +273,12 @@ export default class PlaylistLoader extends EventTarget {
     }
 
     // refresh live playlists after a target duration passes
+    window.clearTimeout(this.mediaUpdateTimeout);
+    this.mediaUpdateTimeout = window.setTimeout(() => {
+      this.trigger('mediaupdatetimeout');
+    }, refreshDelay(this.media(), !!update));
+
+    // TODO: emulate LIVE workflow. disregard media.endlist (comment line 282-287)
     if (!this.media().endList) {
       window.clearTimeout(this.mediaUpdateTimeout);
       this.mediaUpdateTimeout = window.setTimeout(() => {
@@ -346,6 +355,7 @@ export default class PlaylistLoader extends EventTarget {
     const startingState = this.state;
     const mediaChange = !this.media_ || playlist.id !== this.media_.id;
 
+    // TODO: emulate LIVE workflow. disregard media.endlist (comment line 362-392)
     // switch to fully loaded playlists immediately
     if (this.master.playlists[playlist.id].endList ||
         // handle the case of a playlist object (e.g., if using vhs-json with a resolved
@@ -469,6 +479,9 @@ export default class PlaylistLoader extends EventTarget {
     if (isFinalRendition) {
       const delay = media ? (media.targetDuration / 2) * 1000 : 5 * 1000;
 
+      // TODO: emulate LIVE workflow
+      // delay = Math.max(delay, 15000);
+
       this.mediaUpdateTimeout = window.setTimeout(() => this.load(), delay);
       return;
     }
@@ -478,6 +491,8 @@ export default class PlaylistLoader extends EventTarget {
       return;
     }
 
+    // this.trigger('mediaupdatetimeout');
+    // // DONE: emulate LIVE workflow. Disregard media.endlist (comment line 499-503, uncomment line 497)
     if (media && !media.endList) {
       this.trigger('mediaupdatetimeout');
     } else {

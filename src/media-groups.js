@@ -323,6 +323,7 @@ export const setupListeners = {
     } = settings;
 
     playlistLoader.on('loadedmetadata', () => {
+      // console.log('[media-groups setupListeners] triggered \'loadedmetadata\' from playlist-loader.');
       const media = playlistLoader.media();
 
       segmentLoader.playlist(media, requestOptions);
@@ -336,6 +337,7 @@ export const setupListeners = {
     });
 
     playlistLoader.on('loadedplaylist', () => {
+      // console.log('[media-groups setupListeners] triggered \'loadedplaylist\' from playlist-loader.');
       segmentLoader.playlist(playlistLoader.media(), requestOptions);
 
       // If the player isn't paused, ensure that the segment loader is running

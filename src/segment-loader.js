@@ -199,6 +199,7 @@ export default class SegmentLoader extends videojs.EventTarget {
     // Manages the tracking and generation of sync-points, mappings
     // between a time in the display time and a segment index within
     // a playlist
+    // this.syncController_ = new SyncController(options);
     this.syncController_ = settings.syncController;
     this.syncPoint_ = {
       segmentIndex: 0,
@@ -1886,7 +1887,7 @@ export default class SegmentLoader extends videojs.EventTarget {
   }
 
   shouldUpdateTransmuxerTimestampOffset_(timestampOffset) {
-    if (timestampOffset === null) {
+    if (timestampOffset === null || this.transmuxer_ === null) {
       return false;
     }
 

@@ -161,6 +161,7 @@ export default class SyncController extends videojs.EventTarget {
     // ...for synching across variants
     this.timelines = [];
     this.discontinuities = [];
+    this.lastBufferedSegmentTimestamp = 0;
     this.datetimeToDisplayTime = null;
 
     this.logger_ = logger('SyncController');
@@ -389,6 +390,13 @@ export default class SyncController extends videojs.EventTarget {
     return this.timelines[timeline].time;
   }
 
+  timestampOffsetForSegment(segmentInfo) {
+    if (this.lastBufferedSegmentTimestamp < segmentInfo.startOfSegment) {
+      return null;
+    }
+    return this.lastBufferedSegmentTimestamp;
+  }
+
   mappingForTimeline(timeline) {
     if (typeof this.timelines[timeline] === 'undefined') {
       return null;
@@ -412,12 +420,16 @@ export default class SyncController extends videojs.EventTarget {
     const segment = segmentInfo.segment;
     let mappingObj = this.timelines[segmentInfo.timeline];
 
+    // Here, the "catch" is that, the "timestampOffset" value is set
+    // only when the timeline is updated (or discontinuity is there). So, in effect,
+    // timelines[i] is updated only for first segment in the timeline.
     if (segmentInfo.timestampOffset !== null) {
       mappingObj = {
         time: segmentInfo.startOfSegment,
         mapping: segmentInfo.startOfSegment - timingInfo.start
       };
       this.timelines[segmentInfo.timeline] = mappingObj;
+      this.lastBufferedSegmentTimestamp = Math.max(segmentInfo.startOfSegment, this.lastBufferedSegmentTimestamp);
       this.trigger('timestampoffset');
 
       this.logger_(`time mapping for timeline ${segmentInfo.timeline}: ` +
@@ -428,6 +440,9 @@ export default class SyncController extends videojs.EventTarget {
     } else if (mappingObj) {
       segment.start = timingInfo.start + mappingObj.mapping;
       segment.end = timingInfo.end + mappingObj.mapping;
+
+      this.lastBufferedSegmentTimestamp = Math.max(segmentInfo.startOfSegment, this.lastBufferedSegmentTimestamp);
+      this.trigger('lastbufferedsegmentupdate');
     } else {
       return false;
     }
